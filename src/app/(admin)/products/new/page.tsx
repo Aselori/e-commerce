@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { createAdminClient } from "@/lib/supabase";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { createProduct } from "@/app/(admin)/products/actions";
