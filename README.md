@@ -45,24 +45,15 @@ src/app/
 pnpm install
 ```
 
-2. Crea un archivo `.env.local` con las credenciales de Supabase:
+2. Crea un archivo `.env.local` con las credenciales del proyecto de Supabase compartido (pídelas al equipo):
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
-SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
-3. Aplica la migración inicial en tu proyecto de Supabase:
-
-```bash
-# En el dashboard de Supabase → SQL Editor, ejecuta:
-supabase/migrations/001_initial_schema.sql
-# Opcional: datos de prueba
-supabase/seed.sql
-```
-
-4. Inicia el servidor de desarrollo:
+3. Inicia el servidor de desarrollo:
 
 ```bash
 pnpm dev
