@@ -1,6 +1,6 @@
 # E-Commerce — Sistema de Gestión de Pedidos
 
-Sistema de gestión de pedidos para una pequeña empresa mexicana de electrónica. Incluye catálogo de productos para clientes y panel de administración.
+Sistema de gestión de pedidos para una pequeña empresa de electrónica. Incluye catálogo de productos para clientes y panel de administración.
 
 ## Stack
 
