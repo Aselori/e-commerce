@@ -1,6 +1,5 @@
 import { createBrowserClient, createServerClient } from "@supabase/ssr";
 import * as SupabaseJS from "@supabase/supabase-js";
-import { cookies } from "next/headers";
 
 /**
  * Admin client — server-only. Uses the service role key, bypasses RLS entirely.
@@ -35,6 +34,7 @@ export function createClient() {
  * Reads and writes cookies to persist the session across requests.
  */
 export async function createServerSupabaseClient() {
+  const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
 
   return createServerClient(

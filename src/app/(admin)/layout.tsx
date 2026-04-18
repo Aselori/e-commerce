@@ -1,11 +1,15 @@
 import { Suspense } from "react";
-import { createAdminClient } from "@/lib/supabase";
+import { createAdminClient, createServerSupabaseClient } from "@/lib/supabase";
 import { AdminTopNav } from "@/components/admin/AdminTopNav";
 import { AdminSidebarNav } from "@/components/admin/AdminSidebarNav";
 import type { Category } from "@/types";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = createAdminClient();
+  const sessionClient = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await sessionClient.auth.getUser();
 
   const [{ data: categories }, { count: lowStockCount }] = await Promise.all([
     supabase.from("categories").select("*").order("name").returns<Category[]>(),
@@ -19,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-gray-50">
-      <AdminTopNav />
+      <AdminTopNav userEmail={user?.email ?? null} />
 
       <div className="flex flex-1 min-h-0 max-w-screen-xl w-full mx-auto">
         <Suspense fallback={<aside className="hidden md:block w-52 shrink-0 bg-gray-50" />}>

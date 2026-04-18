@@ -1,9 +1,26 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { SearchBar } from "@/components/store/SearchBar";
-import { ShoppingCart, User } from "lucide-react";
+import { UserMenu } from "@/components/store/UserMenu";
+import { ShoppingCart } from "lucide-react";
+import { createServerSupabaseClient } from "@/lib/supabase";
 
-export default function StoreLayout({ children }: { children: React.ReactNode }) {
+export default async function StoreLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let role: "admin" | "customer" | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    role = (profile?.role as "admin" | "customer" | null) ?? null;
+  }
+
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
@@ -33,12 +50,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
             >
               <ShoppingCart className="h-5 w-5" />
             </button>
-            <button
-              className="p-2 text-gray-500 hover:text-gray-900 transition-colors"
-              aria-label="Cuenta"
-            >
-              <User className="h-5 w-5" />
-            </button>
+            <UserMenu email={user?.email ?? null} role={role} />
           </div>
         </div>
       </header>
