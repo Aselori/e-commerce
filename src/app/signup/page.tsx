@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, AtSign, HelpCircle, Key, Lock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,31 +11,32 @@ import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
-  );
-}
-
-function LoginForm() {
+export default function SignupPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/products";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setInfo(null);
+
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
     setLoading(true);
-
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-
+    const { data, error } = await supabase.auth.signUp({ email, password });
     setLoading(false);
 
     if (error) {
@@ -43,13 +44,19 @@ function LoginForm() {
       return;
     }
 
-    router.replace(redirect);
-    router.refresh();
+    if (data.session) {
+      router.replace("/products");
+      router.refresh();
+      return;
+    }
+
+    setInfo(
+      "Cuenta creada. Revisa tu correo para confirmar la dirección antes de iniciar sesión."
+    );
   }
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-white text-zinc-900">
-      {/* Ambient color washes */}
       <div
         aria-hidden
         className="pointer-events-none absolute -left-40 top-0 h-[520px] w-[520px] rounded-full bg-red-100/70 blur-3xl"
@@ -59,12 +66,8 @@ function LoginForm() {
         className="pointer-events-none absolute -right-40 bottom-0 h-[520px] w-[520px] rounded-full bg-yellow-100/60 blur-3xl"
       />
 
-      {/* Top bar */}
       <header className="relative z-10 flex items-center justify-between px-8 py-6">
-        <Link
-          href="/"
-          className="text-lg font-bold tracking-tight text-zinc-900"
-        >
+        <Link href="/" className="text-lg font-bold tracking-tight text-zinc-900">
           FimeTienda
         </Link>
         <button
@@ -76,19 +79,15 @@ function LoginForm() {
         </button>
       </header>
 
-      {/* Main */}
       <main className="relative z-10 flex min-h-[calc(100vh-5rem)] items-center justify-center px-4 pb-16">
         <div className="relative w-full max-w-md">
-          {/* Left accent bar */}
           <div
             aria-hidden
             className="absolute -left-px top-10 bottom-10 w-0.5 bg-red-600"
           />
-
-          {/* Secure access badge */}
           <div className="absolute -top-3 left-10 z-10 inline-flex items-center gap-2 rounded-md bg-red-600 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-red-600/25">
             <Lock className="h-3.5 w-3.5" />
-            Acceso Seguro
+            Nueva Cuenta
           </div>
 
           <form
@@ -96,12 +95,11 @@ function LoginForm() {
             className="rounded-lg bg-white px-10 pb-10 pt-12 shadow-xl shadow-zinc-900/5 ring-1 ring-zinc-200/60"
           >
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
-              FimeTienda
+              Crea tu cuenta
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-zinc-500">
-              Diseñado para tu estilo de vida de alto rendimiento.
-              <br />
-              Autentícate para continuar.
+              Únete a FimeTienda para gestionar tus pedidos
+              <br />y acceder al panel.
             </p>
 
             <div className="mt-8 space-y-5">
@@ -125,40 +123,52 @@ function LoginForm() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label
-                    htmlFor="password"
-                    className="text-xs font-bold uppercase tracking-wider text-zinc-700"
-                  >
-                    Contraseña
-                  </Label>
-                  <Link
-                    href="#"
-                    className="text-xs font-bold uppercase tracking-wider text-red-600 hover:text-red-700"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </Link>
-                </div>
+                <Label
+                  htmlFor="password"
+                  className="text-xs font-bold uppercase tracking-wider text-zinc-700"
+                >
+                  Contraseña
+                </Label>
                 <InputWithIcon
                   icon={<Key className="h-4 w-4" />}
                   id="password"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   required
-                  placeholder="••••••••"
+                  minLength={6}
+                  placeholder="Mínimo 6 caracteres"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label
+                  htmlFor="confirm"
+                  className="text-xs font-bold uppercase tracking-wider text-zinc-700"
+                >
+                  Confirmar contraseña
+                </Label>
+                <InputWithIcon
+                  icon={<Key className="h-4 w-4" />}
+                  id="confirm"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  placeholder="Repite tu contraseña"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
                 />
               </div>
             </div>
 
             {error && (
-              <p
-                role="alert"
-                className="mt-4 text-sm font-medium text-red-600"
-              >
+              <p role="alert" className="mt-4 text-sm font-medium text-red-600">
                 {error}
               </p>
+            )}
+            {info && (
+              <p className="mt-4 text-sm font-medium text-emerald-600">{info}</p>
             )}
 
             <Button
@@ -166,37 +176,20 @@ function LoginForm() {
               disabled={loading}
               className="mt-7 h-12 w-full gap-2 bg-gradient-to-b from-red-600 to-red-700 text-base font-bold text-white shadow-lg shadow-red-600/30 hover:from-red-700 hover:to-red-800"
             >
-              {loading ? "Entrando…" : "Iniciar sesión"}
+              {loading ? "Creando cuenta…" : "Crear cuenta"}
               <ArrowRight className="h-4 w-4" />
             </Button>
 
-            <div className="my-7 h-px bg-zinc-200" />
-
-            <button
-              type="button"
-              className="flex h-11 w-full items-center justify-center gap-3 rounded-md bg-zinc-100 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-200"
-            >
-              <GoogleMark />
-              Entrar con Google
-            </button>
-
             <p className="mt-6 text-center text-sm text-zinc-500">
-              ¿Nuevo por aquí?{" "}
+              ¿Ya tienes cuenta?{" "}
               <Link
-                href="/signup"
+                href="/login"
                 className="font-semibold text-red-600 hover:text-red-700"
               >
-                Crea una cuenta
+                Inicia sesión
               </Link>
             </p>
           </form>
-
-          {/* Status bar */}
-          <div className="mt-10 grid grid-cols-3 gap-6 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
-            <StatusCell label="Estado del sistema" tone="yellow" />
-            <StatusCell label="Nodo cifrado" tone="red" />
-            <StatusCell label="v 2.0.4 – PRE" tone="muted" />
-          </div>
         </div>
       </main>
     </div>
@@ -221,37 +214,5 @@ function InputWithIcon({
         {icon}
       </span>
     </div>
-  );
-}
-
-function StatusCell({
-  label,
-  tone,
-}: {
-  label: string;
-  tone: "yellow" | "red" | "muted";
-}) {
-  const bar =
-    tone === "yellow"
-      ? "bg-yellow-400"
-      : tone === "red"
-        ? "bg-red-200"
-        : "bg-zinc-200";
-  return (
-    <div className="space-y-1.5">
-      <span>{label}</span>
-      <div className={cn("h-0.5 w-full", bar)} />
-    </div>
-  );
-}
-
-function GoogleMark() {
-  return (
-    <span
-      aria-hidden
-      className="flex h-5 w-5 items-center justify-center rounded-sm bg-zinc-900 text-[10px] font-bold text-white"
-    >
-      G
-    </span>
   );
 }

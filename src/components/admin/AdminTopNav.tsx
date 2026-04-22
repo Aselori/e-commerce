@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, User, Search } from "lucide-react";
+import { ShoppingCart, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "@/components/store/UserMenu";
 
 const navLinks = [
   { href: "/products", label: "Panel" },
@@ -11,7 +12,7 @@ const navLinks = [
   { href: "/orders", label: "Pedidos" },
 ];
 
-export function AdminTopNav() {
+export function AdminTopNav({ userEmail }: { userEmail: string | null }) {
   const pathname = usePathname();
 
   return (
@@ -55,9 +56,7 @@ export function AdminTopNav() {
           <button className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors" aria-label="Carrito">
             <ShoppingCart className="h-4.5 w-4.5" />
           </button>
-          <button className="p-1.5 text-gray-500 hover:text-gray-900 transition-colors" aria-label="Cuenta">
-            <User className="h-4.5 w-4.5" />
-          </button>
+          <UserMenu email={userEmail} role="admin" />
         </div>
       </div>
     </header>
