@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Package } from "lucide-react";
 import type { Product } from "@/types";
+import { AddToCartButton } from "@/components/store/AddToCartButton";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("es-MX", {
@@ -81,12 +82,7 @@ export function ProductCard({ product }: { product: Product }) {
         )}
 
         {/* CTA */}
-        <button
-          disabled={outOfStock}
-          className="mt-auto w-full py-2 text-xs font-bold uppercase tracking-wider border border-gray-900 text-gray-900 bg-white hover:bg-gray-900 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {outOfStock ? "Sin existencias" : "Agregar al carrito"}
-        </button>
+        <AddToCartButton product={product} />
       </div>
     </div>
   );

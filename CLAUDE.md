@@ -32,3 +32,4 @@ Small Mexican electronics business — order management system for customers and
 - Use server components for data fetching by default; only use client components when interactivity requires it
 - Always use shadcn/ui components — never build UI primitives from scratch
 - Use pnpm for all package installations
+- Third-party services: addresses/geocoding use Google Maps Places API (the client has chosen it). Don't propose swaps to community-run proxies, scrapers, or self-hosted datasets unless the SaaS has a concrete failure mode for this use case — "free forever" and "no external dependency" aren't automatic wins.

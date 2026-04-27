@@ -9,7 +9,7 @@ import { UserMenu } from "@/components/store/UserMenu";
 const navLinks = [
   { href: "/products", label: "Panel" },
   { href: "/products", label: "Inventario" },
-  { href: "/orders", label: "Pedidos" },
+  { href: "/admin-orders", label: "Pedidos" },
 ];
 
 export function AdminTopNav({ userEmail }: { userEmail: string | null }) {

@@ -3,10 +3,10 @@ import { createServerClient } from "@supabase/ssr";
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  const segments = path.split("/").filter(Boolean);
 
   // Public product detail page: /products/<id> (single segment after /products).
   // /products/new and /products/<id>/edit stay protected.
-  const segments = path.split("/").filter(Boolean);
   if (
     segments.length === 2 &&
     segments[0] === "products" &&
@@ -14,6 +14,9 @@ export async function proxy(request: NextRequest) {
   ) {
     return NextResponse.next();
   }
+
+  const requiresAdmin =
+    segments[0] === "products" || segments[0] === "admin-orders";
 
   let response = NextResponse.next({ request });
 
@@ -49,21 +52,32 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  if (requiresAdmin) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
 
-  if (profile?.role !== "admin") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+    if (profile?.role !== "admin") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/products", "/products/:path*"],
+  matcher: [
+    "/products",
+    "/products/:path*",
+    "/checkout",
+    "/checkout/:path*",
+    "/orders",
+    "/orders/:path*",
+    "/admin-orders",
+    "/admin-orders/:path*",
+  ],
 };
