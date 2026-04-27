@@ -51,12 +51,19 @@ export function UserMenu({ email, role }: Props) {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         {role === "admin" && (
-          <DropdownMenuItem render={<Link href="/products" />}>
-            Panel de administración
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem render={<Link href="/products" />}>
+              Panel de administración
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href="/admin-orders" />}>
+              Órdenes
+            </DropdownMenuItem>
+          </>
         )}
         {role === "customer" && (
-          <DropdownMenuItem disabled>Mis pedidos (próximamente)</DropdownMenuItem>
+          <DropdownMenuItem render={<Link href="/orders" />}>
+            Mis pedidos
+          </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem
