@@ -1,17 +1,21 @@
-import type { OrderStatus } from "@/types";
+import type { DeliveryMethod, OrderStatus } from "@/types";
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  pending: "Pendiente de pago",
+  pending_review: "Esperando revisión",
+  quote_sent: "Cotización lista",
+  awaiting_payment: "Esperando comprobante",
   payment_review: "Comprobante en revisión",
-  confirmed: "Confirmada",
-  shipped: "Enviada",
-  ready_for_pickup: "Lista para recoger",
-  delivered: "Entregada",
-  cancelled: "Cancelada",
+  confirmed: "Pago confirmado",
+  shipped: "Enviado",
+  ready_for_pickup: "Listo para recoger",
+  delivered: "Entregado",
+  cancelled: "Cancelado",
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  pending: "bg-amber-100 text-amber-800",
+  pending_review: "bg-amber-100 text-amber-800",
+  quote_sent: "bg-yellow-100 text-yellow-800",
+  awaiting_payment: "bg-amber-100 text-amber-800",
   payment_review: "bg-blue-100 text-blue-800",
   confirmed: "bg-emerald-100 text-emerald-800",
   shipped: "bg-indigo-100 text-indigo-800",
@@ -21,7 +25,9 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
 };
 
 export const ORDER_STATUSES: OrderStatus[] = [
-  "pending",
+  "pending_review",
+  "quote_sent",
+  "awaiting_payment",
   "payment_review",
   "confirmed",
   "shipped",
@@ -29,3 +35,20 @@ export const ORDER_STATUSES: OrderStatus[] = [
   "delivered",
   "cancelled",
 ];
+
+export function statusLabelFor(status: OrderStatus, method: DeliveryMethod): string {
+  if (status === "pending_review") {
+    return method === "shipping" ? "Esperando cotización" : "Esperando confirmación";
+  }
+  return ORDER_STATUS_LABELS[status];
+}
+
+export const CANCELLABLE_STATUSES: OrderStatus[] = [
+  "pending_review",
+  "quote_sent",
+  "awaiting_payment",
+];
+
+export function isCancellable(status: OrderStatus): boolean {
+  return (CANCELLABLE_STATUSES as string[]).includes(status);
+}

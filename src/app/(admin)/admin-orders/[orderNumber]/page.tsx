@@ -3,9 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase";
 import { formatMXN } from "@/lib/format";
-import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from "@/lib/orders";
+import { ORDER_STATUS_COLORS, statusLabelFor } from "@/lib/orders";
 import { StatusControls } from "./StatusControls";
-import type { OrderStatus } from "@/types";
+import type { BillingInfo, DeliveryMethod, OrderStatus } from "@/types";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -17,7 +17,7 @@ export default async function AdminOrderDetailPage({
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, order_number, status, delivery_method, shipping_address, postal_code, shipping_cost, total, notes, created_at, user_id")
+    .select("id, order_number, status, delivery_method, shipping_address, postal_code, shipping_cost, total, notes, billing_required, billing_info, quote_amount, quote_sent_at, created_at, user_id")
     .eq("order_number", orderNumber)
     .maybeSingle();
 
@@ -50,6 +50,9 @@ export default async function AdminOrderDetailPage({
     0
   );
   const customerEmail = authUser?.user?.email ?? null;
+  const status = order.status as OrderStatus;
+  const method = order.delivery_method as DeliveryMethod;
+  const billing = order.billing_info as BillingInfo | null;
 
   return (
     <div className="space-y-6">
@@ -66,9 +69,9 @@ export default async function AdminOrderDetailPage({
           </p>
         </div>
         <span
-          className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full ${ORDER_STATUS_COLORS[order.status as OrderStatus]}`}
+          className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full ${ORDER_STATUS_COLORS[status]}`}
         >
-          {ORDER_STATUS_LABELS[order.status as OrderStatus]}
+          {statusLabelFor(status, method)}
         </span>
       </div>
 
@@ -108,10 +111,16 @@ export default async function AdminOrderDetailPage({
                 <span>Subtotal</span>
                 <span>{formatMXN(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-gray-700">
-                <span>Envío</span>
-                <span>{formatMXN(order.shipping_cost ?? 0)}</span>
-              </div>
+              {method === "shipping" && (
+                <div className="flex justify-between text-gray-700">
+                  <span>Envío</span>
+                  <span>
+                    {order.shipping_cost == null
+                      ? "Por cotizar"
+                      : formatMXN(order.shipping_cost)}
+                  </span>
+                </div>
+              )}
               <div className="flex justify-between text-gray-900 font-bold text-base pt-1">
                 <span>Total</span>
                 <span>{formatMXN(order.total)}</span>
@@ -133,6 +142,20 @@ export default async function AdminOrderDetailPage({
               <div className="mt-6 text-sm">
                 <p className="font-bold text-gray-900 mb-1">Entrega</p>
                 <p className="text-gray-700">Recoger en sucursal.</p>
+              </div>
+            )}
+
+            {order.billing_required && billing && (
+              <div className="mt-6 text-sm">
+                <p className="font-bold text-gray-900 mb-1">Datos de facturación</p>
+                <div className="text-gray-700 space-y-0.5">
+                  <p>{billing.razon_social}</p>
+                  <p>RFC: {billing.rfc}</p>
+                  <p>
+                    Régimen: {billing.regimen_fiscal} · Uso CFDI: {billing.uso_cfdi}
+                  </p>
+                  <p>{billing.email}</p>
+                </div>
               </div>
             )}
 
@@ -204,7 +227,8 @@ export default async function AdminOrderDetailPage({
           </h2>
           <StatusControls
             orderId={order.id}
-            currentStatus={order.status as OrderStatus}
+            currentStatus={status}
+            deliveryMethod={method}
             hasReceipt={!!receipt}
             receiptReviewed={!!receipt?.reviewed}
           />
