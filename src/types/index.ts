@@ -23,7 +23,9 @@ export type Product = {
 };
 
 export type OrderStatus =
-  | "pending"
+  | "pending_review"
+  | "quote_sent"
+  | "awaiting_payment"
   | "payment_review"
   | "confirmed"
   | "shipped"
@@ -32,6 +34,14 @@ export type OrderStatus =
   | "cancelled";
 
 export type DeliveryMethod = "shipping" | "pickup";
+
+export type BillingInfo = {
+  rfc: string;
+  razon_social: string;
+  regimen_fiscal: string;
+  uso_cfdi: string;
+  email: string;
+};
 
 export type Order = {
   id: string;
@@ -44,6 +54,11 @@ export type Order = {
   shipping_cost: number | null;
   total: number;
   notes: string | null;
+  billing_required: boolean;
+  billing_info: BillingInfo | null;
+  quote_amount: number | null;
+  quote_sent_at: string | null;
+  decision_at: string | null;
   created_at: string;
 };
 

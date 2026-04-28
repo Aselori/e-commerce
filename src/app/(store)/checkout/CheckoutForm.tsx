@@ -24,6 +24,14 @@ export function CheckoutForm() {
     state: "",
     postalCode: "",
   });
+  const [billingRequired, setBillingRequired] = useState(false);
+  const [billing, setBilling] = useState({
+    rfc: "",
+    razon_social: "",
+    regimen_fiscal: "",
+    uso_cfdi: "",
+    email: "",
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -44,10 +52,19 @@ export function CheckoutForm() {
     address.state.trim() &&
     address.postalCode.trim();
 
+  const billingComplete =
+    !billingRequired ||
+    (billing.rfc.trim() &&
+      billing.razon_social.trim() &&
+      billing.regimen_fiscal.trim() &&
+      billing.uso_cfdi.trim() &&
+      billing.email.trim());
+
   const disabled =
     pending ||
     items.length === 0 ||
-    (method === "shipping" && !addressComplete);
+    (method === "shipping" && !addressComplete) ||
+    !billingComplete;
 
   if (!hydrated) {
     return <div className="h-40 bg-gray-100 rounded animate-pulse" />;
@@ -181,6 +198,96 @@ export function CheckoutForm() {
             </div>
           </section>
         )}
+
+        <section className="bg-white rounded-lg shadow-sm p-6 space-y-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="billing_required"
+              checked={billingRequired}
+              onChange={(e) => setBillingRequired(e.target.checked)}
+              className="mt-1"
+            />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Necesito factura</p>
+              <p className="text-xs text-gray-500">
+                Marca esta opción si requieres comprobante fiscal (CFDI).
+              </p>
+            </div>
+          </label>
+
+          {billingRequired && (
+            <div className="space-y-3 pt-2 border-t border-gray-100">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">RFC</label>
+                  <input
+                    name="rfc"
+                    value={billing.rfc}
+                    onChange={(e) =>
+                      setBilling({ ...billing, rfc: e.target.value.toUpperCase() })
+                    }
+                    maxLength={13}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Correo de facturación
+                  </label>
+                  <input
+                    type="email"
+                    name="billing_email"
+                    value={billing.email}
+                    onChange={(e) => setBilling({ ...billing, email: e.target.value })}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">
+                  Razón social
+                </label>
+                <input
+                  name="razon_social"
+                  value={billing.razon_social}
+                  onChange={(e) =>
+                    setBilling({ ...billing, razon_social: e.target.value })
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">
+                    Régimen fiscal
+                  </label>
+                  <input
+                    name="regimen_fiscal"
+                    value={billing.regimen_fiscal}
+                    onChange={(e) =>
+                      setBilling({ ...billing, regimen_fiscal: e.target.value })
+                    }
+                    placeholder="612 - Personas Físicas con Actividades..."
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Uso CFDI</label>
+                  <input
+                    name="uso_cfdi"
+                    value={billing.uso_cfdi}
+                    onChange={(e) =>
+                      setBilling({ ...billing, uso_cfdi: e.target.value })
+                    }
+                    placeholder="G03 - Gastos en general"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
 
         <section className="bg-white rounded-lg shadow-sm p-6">
           <h2 className="text-sm font-bold uppercase tracking-wider text-gray-900 mb-4">

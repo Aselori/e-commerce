@@ -3,6 +3,8 @@
 import { createServerSupabaseClient } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { notifyAdminNewOrder, notifyCustomerOrderReceived } from "@/lib/email";
+import type { BillingInfo } from "@/types";
 
 type CheckoutItemInput = {
   productId: string;
@@ -62,6 +64,20 @@ export async function placeOrder(
 
   const notes = str(formData, "notes") || null;
 
+  const billingRequired = formData.get("billing_required") === "on";
+  let billingInfo: BillingInfo | null = null;
+  if (billingRequired) {
+    const rfc = str(formData, "rfc").toUpperCase();
+    const razon_social = str(formData, "razon_social");
+    const regimen_fiscal = str(formData, "regimen_fiscal");
+    const uso_cfdi = str(formData, "uso_cfdi");
+    const email = str(formData, "billing_email");
+    if (!rfc || !razon_social || !regimen_fiscal || !uso_cfdi || !email) {
+      return { error: "Completa los datos de facturación." };
+    }
+    billingInfo = { rfc, razon_social, regimen_fiscal, uso_cfdi, email };
+  }
+
   let shippingAddress: Record<string, unknown> | null = null;
   let postalCode: string | null = null;
 
@@ -119,13 +135,15 @@ export async function placeOrder(
     .insert({
       order_number: orderNumber,
       user_id: user.id,
-      status: "pending",
+      status: "pending_review",
       delivery_method: deliveryMethod,
       shipping_address: shippingAddress,
       postal_code: postalCode,
-      shipping_cost: 0,
+      shipping_cost: null,
       total: subtotal,
       notes,
+      billing_required: billingRequired,
+      billing_info: billingInfo,
     })
     .select("id")
     .single();
@@ -147,6 +165,19 @@ export async function placeOrder(
     await supabase.from("orders").delete().eq("id", order.id);
     return { error: iErr.message };
   }
+
+  await notifyAdminNewOrder({
+    orderNumber,
+    customerEmail: user.email ?? null,
+    deliveryMethod,
+    subtotal,
+    billingRequired,
+  });
+  await notifyCustomerOrderReceived({
+    to: user.email ?? null,
+    orderNumber,
+    deliveryMethod,
+  });
 
   revalidatePath("/orders");
   redirect(`/orders/${orderNumber}`);

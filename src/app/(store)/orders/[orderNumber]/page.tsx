@@ -2,9 +2,13 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase";
 import { formatMXN } from "@/lib/format";
-import { ORDER_STATUS_COLORS, ORDER_STATUS_LABELS } from "@/lib/orders";
+import {
+  ORDER_STATUS_COLORS,
+  statusLabelFor,
+} from "@/lib/orders";
 import { ReceiptUpload } from "./ReceiptUpload";
-import type { OrderStatus } from "@/types";
+import { OrderActions } from "./OrderActions";
+import type { BillingInfo, DeliveryMethod, OrderStatus } from "@/types";
 
 export default async function OrderDetailPage({
   params,
@@ -20,11 +24,16 @@ export default async function OrderDetailPage({
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, order_number, status, delivery_method, shipping_address, postal_code, shipping_cost, total, notes, created_at")
+    .select(
+      "id, order_number, status, delivery_method, shipping_address, postal_code, shipping_cost, total, notes, billing_required, billing_info, quote_amount, quote_sent_at, decision_at, created_at"
+    )
     .eq("order_number", orderNumber)
     .maybeSingle();
 
   if (!order) notFound();
+
+  const status = order.status as OrderStatus;
+  const method = order.delivery_method as DeliveryMethod;
 
   const { data: items } = await supabase
     .from("order_items")
@@ -42,6 +51,10 @@ export default async function OrderDetailPage({
     0
   );
 
+  const billing = order.billing_info as BillingInfo | null;
+
+  const showReceiptUpload = status === "awaiting_payment" && !receipt;
+
   return (
     <div className="max-w-screen-lg mx-auto px-6 py-10 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -57,9 +70,9 @@ export default async function OrderDetailPage({
           </p>
         </div>
         <span
-          className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full ${ORDER_STATUS_COLORS[order.status as OrderStatus]}`}
+          className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full ${ORDER_STATUS_COLORS[status]}`}
         >
-          {ORDER_STATUS_LABELS[order.status as OrderStatus]}
+          {statusLabelFor(status, method)}
         </span>
       </div>
 
@@ -88,17 +101,23 @@ export default async function OrderDetailPage({
               <span>Subtotal</span>
               <span>{formatMXN(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-gray-700">
-              <span>Envío</span>
-              <span>{formatMXN(order.shipping_cost ?? 0)}</span>
-            </div>
+            {method === "shipping" && (
+              <div className="flex justify-between text-gray-700">
+                <span>Envío</span>
+                <span>
+                  {order.shipping_cost == null
+                    ? "Por cotizar"
+                    : formatMXN(order.shipping_cost)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-gray-900 font-bold text-base pt-1">
               <span>Total</span>
               <span>{formatMXN(order.total)}</span>
             </div>
           </div>
 
-          {order.delivery_method === "shipping" && order.shipping_address && (
+          {method === "shipping" && order.shipping_address && (
             <div className="mt-6 text-sm">
               <p className="font-bold text-gray-900 mb-1">Dirección de envío</p>
               <p className="text-gray-700">
@@ -109,10 +128,24 @@ export default async function OrderDetailPage({
               </p>
             </div>
           )}
-          {order.delivery_method === "pickup" && (
+          {method === "pickup" && (
             <div className="mt-6 text-sm">
               <p className="font-bold text-gray-900 mb-1">Entrega</p>
               <p className="text-gray-700">Recoger en sucursal.</p>
+            </div>
+          )}
+
+          {order.billing_required && billing && (
+            <div className="mt-6 text-sm">
+              <p className="font-bold text-gray-900 mb-1">Datos de facturación</p>
+              <div className="text-gray-700 space-y-0.5">
+                <p>{billing.razon_social}</p>
+                <p>RFC: {billing.rfc}</p>
+                <p>
+                  Régimen: {billing.regimen_fiscal} · Uso CFDI: {billing.uso_cfdi}
+                </p>
+                <p>{billing.email}</p>
+              </div>
             </div>
           )}
 
@@ -124,21 +157,43 @@ export default async function OrderDetailPage({
           )}
         </section>
 
-        <aside className="bg-white rounded-lg shadow-sm p-6 h-fit">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-900 mb-4">
-            Pago
+        <aside className="bg-white rounded-lg shadow-sm p-6 h-fit space-y-4">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-gray-900">
+            Estado
           </h2>
-          {order.status === "pending" && !receipt && (
-            <>
-              <p className="text-sm text-gray-700 mb-3">
-                Realiza el depósito o transferencia por{" "}
-                <strong>{formatMXN(order.total)}</strong> a la cuenta del negocio
-                y sube el comprobante para que lo revisemos.
-              </p>
-              <div className="text-xs text-gray-500 bg-gray-50 rounded p-3 mb-4 space-y-1">
+
+          {status === "pending_review" && (
+            <p className="text-sm text-gray-700">
+              {method === "shipping"
+                ? "Estamos preparando tu cotización de envío. Te avisaremos por correo cuando esté lista."
+                : "Estamos confirmando la disponibilidad de tu pedido. Te avisaremos por correo cuando esté listo para pagar."}
+            </p>
+          )}
+
+          {status === "quote_sent" && (
+            <div className="text-sm text-gray-700 space-y-2">
+              <p>Tu cotización está lista.</p>
+              {order.shipping_cost != null && (
                 <p>
-                  <span className="font-bold text-gray-700">Banco:</span> {/* TODO */}
-                  (pendiente de configurar)
+                  Costo de envío: <strong>{formatMXN(order.shipping_cost)}</strong>
+                </p>
+              )}
+              <p>
+                Total a pagar: <strong>{formatMXN(order.total)}</strong>
+              </p>
+            </div>
+          )}
+
+          {status === "awaiting_payment" && (
+            <div className="text-sm text-gray-700 space-y-3">
+              <p>
+                Realiza tu transferencia por{" "}
+                <strong>{formatMXN(order.total)}</strong> y sube el comprobante.
+              </p>
+              <div className="text-xs text-gray-500 bg-gray-50 rounded p-3 space-y-1">
+                <p>
+                  <span className="font-bold text-gray-700">Banco:</span> (pendiente
+                  de configurar)
                 </p>
                 <p>
                   <span className="font-bold text-gray-700">CLABE:</span> (pendiente)
@@ -148,27 +203,60 @@ export default async function OrderDetailPage({
                   {order.order_number}
                 </p>
               </div>
-              <ReceiptUpload orderNumber={order.order_number} userId={user.id} />
-            </>
-          )}
-          {receipt && (
-            <div className="text-sm text-gray-700 space-y-2">
-              <p>
-                Comprobante recibido el{" "}
-                {new Date(receipt.uploaded_at).toLocaleString("es-MX")}.
-              </p>
-              <p className="text-xs text-gray-500">
-                {receipt.reviewed
-                  ? "Revisado por el administrador."
-                  : "En espera de revisión."}
-              </p>
             </div>
           )}
-          {!receipt && order.status !== "pending" && (
-            <p className="text-sm text-gray-500">
-              Esta orden ya no admite nuevos comprobantes.
+
+          {status === "payment_review" && (
+            <p className="text-sm text-gray-700">
+              Recibimos tu comprobante. Lo estamos revisando.
             </p>
           )}
+
+          {status === "confirmed" && (
+            <p className="text-sm text-gray-700">
+              Tu pago fue confirmado. Te avisaremos cuando tu pedido esté{" "}
+              {method === "shipping" ? "en camino" : "listo para recoger"}.
+            </p>
+          )}
+
+          {status === "shipped" && (
+            <p className="text-sm text-gray-700">Tu pedido va en camino.</p>
+          )}
+
+          {status === "ready_for_pickup" && (
+            <p className="text-sm text-gray-700">
+              Tu pedido está listo. Pasa a recogerlo en sucursal.
+            </p>
+          )}
+
+          {status === "delivered" && (
+            <p className="text-sm text-gray-700">
+              Pedido entregado. ¡Gracias por tu compra!
+            </p>
+          )}
+
+          {status === "cancelled" && (
+            <p className="text-sm text-gray-700">
+              Este pedido fue cancelado.
+            </p>
+          )}
+
+          {receipt && status !== "awaiting_payment" && (
+            <p className="text-xs text-gray-500">
+              Comprobante subido el{" "}
+              {new Date(receipt.uploaded_at).toLocaleString("es-MX")}.
+            </p>
+          )}
+
+          {showReceiptUpload && (
+            <ReceiptUpload orderNumber={order.order_number} userId={user.id} />
+          )}
+
+          <OrderActions
+            orderNumber={order.order_number}
+            status={status}
+            deliveryMethod={method}
+          />
         </aside>
       </div>
     </div>
