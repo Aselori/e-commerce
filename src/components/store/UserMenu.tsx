@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTransition } from "react";
+import { toast } from "sonner";
 import { User } from "lucide-react";
 import {
   DropdownMenu,
@@ -20,6 +22,7 @@ type Props = {
 };
 
 export function UserMenu({ email, role }: Props) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   if (!email) {
@@ -56,7 +59,7 @@ export function UserMenu({ email, role }: Props) {
               Panel de administración
             </DropdownMenuItem>
             <DropdownMenuItem render={<Link href="/admin-orders" />}>
-              Órdenes
+              Pedidos
             </DropdownMenuItem>
           </>
         )}
@@ -68,7 +71,13 @@ export function UserMenu({ email, role }: Props) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={isPending}
-          onClick={() => startTransition(() => signOut())}
+          onClick={() =>
+            startTransition(async () => {
+              await signOut();
+              toast.success("Sesión cerrada");
+              router.push("/");
+            })
+          }
         >
           Cerrar sesión
         </DropdownMenuItem>

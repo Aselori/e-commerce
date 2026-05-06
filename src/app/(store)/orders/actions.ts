@@ -41,7 +41,7 @@ async function loadOrderForUser(
     .eq("order_number", orderNumber)
     .maybeSingle();
 
-  if (error || !order) return { ok: false, error: "Orden no encontrada." };
+  if (error || !order) return { ok: false, error: "Pedido no encontrado." };
   if (order.user_id !== user.id) return { ok: false, error: "No autorizado." };
 
   return { ok: true, supabase, user, order };
@@ -56,7 +56,7 @@ export async function submitReceipt(
   const { supabase, user, order } = ctx;
 
   if (order.status !== "awaiting_payment") {
-    return { error: "Esta orden no está en espera de comprobante." };
+    return { error: "Este pedido no está en espera de comprobante." };
   }
 
   const { error: rErr } = await supabase.from("payment_receipts").insert({
@@ -90,7 +90,7 @@ export async function acceptQuote(orderNumber: string): Promise<ActionResult> {
   const { supabase, order } = ctx;
 
   if (order.status !== "quote_sent") {
-    return { error: "Esta orden no tiene cotización pendiente." };
+    return { error: "Este pedido no tiene cotización pendiente." };
   }
 
   const { error } = await supabase
@@ -156,7 +156,7 @@ export async function cancelOrder(orderNumber: string): Promise<ActionResult> {
   const { supabase, user, order } = ctx;
 
   if (!isCancellable(order.status as OrderStatus)) {
-    return { error: "Esta orden ya no se puede cancelar." };
+    return { error: "Este pedido ya no se puede cancelar." };
   }
 
   const { error } = await supabase

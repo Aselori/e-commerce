@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { Suspense } from "react";
 import { createAdminClient } from "@/lib/supabase";
 import {
   Table,
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { DeleteProductButton } from "@/components/admin/DeleteProductButton";
+import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
 import { cn } from "@/lib/utils";
 import { Pencil, Plus, Package } from "lucide-react";
 import Image from "next/image";
@@ -62,22 +64,48 @@ function StatusBadge({ product }: { product: Product }) {
   );
 }
 
-export default async function AdminProductsPage() {
+const normalize = (s: string) =>
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+type StockFilter = "all" | "in_stock" | "low_stock";
+
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ search?: string; stock?: string }>;
+}) {
+  const { search, stock } = await searchParams;
+  const stockFilter = (stock === "in_stock" || stock === "low_stock" ? stock : "all") as StockFilter;
   const supabase = createAdminClient();
 
-  const { data: products } = await supabase
+  const { data: allProducts } = await supabase
     .from("products")
     .select("*, category:categories(name)")
     .order("created_at", { ascending: false })
     .returns<Product[]>();
 
-  const totalSKU = products?.length ?? 0;
-  const activeListings = products?.filter((p) => p.active).length ?? 0;
-  const outOfStock = products?.filter((p) => p.stock === 0).length ?? 0;
-  const inventoryValue = products?.reduce((sum, p) => {
+  const baseProducts = allProducts ?? [];
+
+  const totalSKU = baseProducts.length;
+  const activeListings = baseProducts.filter((p) => p.active).length;
+  const outOfStock = baseProducts.filter((p) => p.stock === 0).length;
+  const inventoryValue = baseProducts.reduce((sum, p) => {
     if (p.active && p.price != null) return sum + p.price * p.stock;
     return sum;
-  }, 0) ?? 0;
+  }, 0);
+
+  let products = baseProducts;
+
+  if (search) {
+    const term = normalize(search);
+    products = products.filter((p) => normalize(p.name).includes(term));
+  }
+
+  if (stockFilter === "in_stock") {
+    products = products.filter((p) => p.active && p.stock > 5);
+  } else if (stockFilter === "low_stock") {
+    products = products.filter((p) => p.active && p.stock > 0 && p.stock <= 5);
+  }
 
   return (
     <div className="space-y-8">
@@ -127,22 +155,37 @@ export default async function AdminProductsPage() {
 
       {/* Table */}
       <div className="bg-white shadow-sm rounded-sm overflow-hidden">
-        {/* Tabs row */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2.5 bg-white">
+        <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-4 py-2.5 bg-white">
+          <div className="w-64">
+            <Suspense fallback={null}>
+              <AdminSearchBar placeholder="Buscar producto..." />
+            </Suspense>
+          </div>
           <div className="flex gap-1">
-            {["Todos", "En stock", "Stock bajo"].map((tab, i) => (
-              <button
-                key={tab}
-                className={cn(
-                  "px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors",
-                  i === 0
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-500 hover:text-gray-900"
-                )}
-              >
-                {tab}
-              </button>
-            ))}
+            {([
+              { key: "all", label: "Todos" },
+              { key: "in_stock", label: "En stock" },
+              { key: "low_stock", label: "Stock bajo" },
+            ] as const).map(({ key, label }) => {
+              const params = new URLSearchParams();
+              if (key !== "all") params.set("stock", key);
+              if (search) params.set("search", search);
+              const href = params.toString() ? `/products?${params}` : "/products";
+              return (
+                <Link
+                  key={key}
+                  href={href}
+                  className={cn(
+                    "px-4 py-1.5 text-xs font-bold uppercase tracking-wider rounded transition-colors",
+                    stockFilter === key
+                      ? "bg-gray-900 text-white"
+                      : "text-gray-500 hover:text-gray-900"
+                  )}
+                >
+                  {label}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -170,7 +213,7 @@ export default async function AdminProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products && products.length > 0 ? (
+            {products.length > 0 ? (
               products.map((product) => {
                 const imageUrl = product.images?.[0] ?? null;
                 return (

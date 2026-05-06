@@ -29,7 +29,7 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
   const [state, formAction, isPending] = useActionState(action, null);
 
   const fieldClass =
-    "bg-zinc-800 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 focus-visible:ring-red-500";
+    "bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus-visible:ring-red-500";
 
   return (
     <form action={formAction} className="space-y-6 max-w-2xl">
@@ -38,14 +38,14 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
 
       {/* Error banner */}
       {state?.error && (
-        <div className="rounded-md border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400">
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
           {state.error}
         </div>
       )}
 
       {/* Name */}
       <div className="space-y-2">
-        <Label htmlFor="name" className="text-zinc-300">
+        <Label htmlFor="name" className="text-gray-700">
           Nombre <span className="text-red-500">*</span>
         </Label>
         <Input
@@ -60,7 +60,7 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
 
       {/* Description */}
       <div className="space-y-2">
-        <Label htmlFor="description" className="text-zinc-300">
+        <Label htmlFor="description" className="text-gray-700">
           Descripción
         </Label>
         <Textarea
@@ -76,7 +76,7 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
       {/* Price + Stock row */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="price" className="text-zinc-300">
+          <Label htmlFor="price" className="text-gray-700">
             Precio (MXN)
           </Label>
           <Input
@@ -91,7 +91,7 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="stock" className="text-zinc-300">
+          <Label htmlFor="stock" className="text-gray-700">
             Stock <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -109,20 +109,20 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
       {/* Category + Type row */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="text-zinc-300">Categoría</Label>
+          <Label className="text-gray-700">Categoría</Label>
           <Select name="category_id" defaultValue={product?.category_id ?? ""}>
             <SelectTrigger className={fieldClass}>
               <SelectValue placeholder="Sin categoría" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-100">
-              <SelectItem value="" className="focus:bg-zinc-700">
+            <SelectContent className="bg-white border-gray-200 text-gray-900">
+              <SelectItem value="" className="focus:bg-gray-100">
                 Sin categoría
               </SelectItem>
               {categories.map((cat) => (
                 <SelectItem
                   key={cat.id}
                   value={cat.id}
-                  className="focus:bg-zinc-700"
+                  className="focus:bg-gray-100"
                 >
                   {cat.name}
                 </SelectItem>
@@ -132,7 +132,7 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-zinc-300">
+          <Label className="text-gray-700">
             Tipo <span className="text-red-500">*</span>
           </Label>
           <Select
@@ -143,11 +143,11 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
             <SelectTrigger className={fieldClass}>
               <SelectValue placeholder="Seleccionar tipo" />
             </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700 text-zinc-100">
-              <SelectItem value="individual" className="focus:bg-zinc-700">
+            <SelectContent className="bg-white border-gray-200 text-gray-900">
+              <SelectItem value="individual" className="focus:bg-gray-100">
                 Individual
               </SelectItem>
-              <SelectItem value="kit" className="focus:bg-zinc-700">
+              <SelectItem value="kit" className="focus:bg-gray-100">
                 Kit
               </SelectItem>
             </SelectContent>
@@ -157,9 +157,9 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
 
       {/* Images */}
       <div className="space-y-2">
-        <Label htmlFor="images" className="text-zinc-300">
+        <Label htmlFor="images" className="text-gray-700">
           Imágenes{" "}
-          <span className="text-zinc-600 font-normal">(una URL por línea)</span>
+          <span className="text-gray-500 font-normal">(una URL por línea)</span>
         </Label>
         <Textarea
           id="images"
@@ -178,9 +178,9 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
           name="active"
           type="checkbox"
           defaultChecked={product?.active ?? true}
-          className="h-4 w-4 rounded border-zinc-700 bg-zinc-800 accent-red-500"
+          className="h-4 w-4 rounded border-gray-300 bg-white accent-red-500"
         />
-        <Label htmlFor="active" className="text-zinc-300 cursor-pointer">
+        <Label htmlFor="active" className="text-gray-700 cursor-pointer">
           Producto activo (visible en la tienda)
         </Label>
       </div>
@@ -198,7 +198,7 @@ export function ProductForm({ product, categories, action }: ProductFormProps) {
         <Button
           type="button"
           variant="ghost"
-          className="text-zinc-400 hover:text-zinc-100"
+          className="text-gray-500 hover:text-gray-900"
           onClick={() => history.back()}
         >
           Cancelar

@@ -43,8 +43,9 @@ export function CheckoutForm() {
   useEffect(() => {
     if (state && "ok" in state && state.ok) {
       clear();
+      router.push(`/orders/${state.orderNumber}`);
     }
-  }, [state, clear]);
+  }, [state, clear, router]);
 
   const addressComplete =
     address.street.trim() &&

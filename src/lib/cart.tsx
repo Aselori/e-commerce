@@ -6,6 +6,8 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
+  useSyncExternalStore,
   useState,
   type ReactNode,
 } from "react";
@@ -54,23 +56,34 @@ function readStorage(): CartItem[] {
   }
 }
 
+function subscribeNoop() {
+  return () => {};
+}
+
+function getHydrated() {
+  return true;
+}
+
+function getServerHydrated() {
+  return false;
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [items, setItems] = useState<CartItem[]>(readStorage);
+  const hydrated = useSyncExternalStore(subscribeNoop, getHydrated, getServerHydrated);
+  const skipSync = useRef(true);
 
   useEffect(() => {
-    setItems(readStorage());
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
+    if (skipSync.current) {
+      skipSync.current = false;
+      return;
+    }
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     } catch {
       // ignore quota errors
     }
-  }, [items, hydrated]);
+  }, [items]);
 
   const add = useCallback<CartContextValue["add"]>((item, quantity = 1) => {
     setItems((prev) => {

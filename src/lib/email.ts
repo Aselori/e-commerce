@@ -55,7 +55,7 @@ export async function notifyAdminReceipt(data: ReceiptNotification) {
       "Comprobante recibido",
       `<p>Un cliente subió un comprobante de pago. Revísalo en el panel de administración.</p>
        <table style="border-collapse: collapse; font-size: 14px;">
-         <tr><td style="padding:4px 12px 4px 0;color:#6b7280;">Orden</td><td><strong>${data.orderNumber}</strong></td></tr>
+         <tr><td style="padding:4px 12px 4px 0;color:#6b7280;">Pedido</td><td><strong>${data.orderNumber}</strong></td></tr>
          <tr><td style="padding:4px 12px 4px 0;color:#6b7280;">Cliente</td><td>${data.customerEmail ?? "(sin correo)"}</td></tr>
          <tr><td style="padding:4px 12px 4px 0;color:#6b7280;">Total</td><td>${formatMXN(data.total)}</td></tr>
          <tr><td style="padding:4px 12px 4px 0;color:#6b7280;">Subido</td><td>${data.uploadedAt.toLocaleString("es-MX")}</td></tr>

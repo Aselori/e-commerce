@@ -27,11 +27,17 @@ export default async function StorePage(props: PageProps<"/">) {
     .order("created_at", { ascending: false });
 
   if (matchedCategory) query = query.eq("category_id", matchedCategory.id);
-  if (search) query = query.ilike("name", `%${search}%`);
   if (inStock) query = query.gt("stock", 0);
 
-  const { data: products } = await query.returns<Product[]>();
-  const total = products?.length ?? 0;
+  const { data: allProducts } = await query.returns<Product[]>();
+
+  const normalize = (s: string) =>
+    s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+  const products = search
+    ? (allProducts ?? []).filter((p) => normalize(p.name).includes(normalize(search)))
+    : (allProducts ?? []);
+  const total = products.length;
 
   return (
     <div className="max-w-screen-xl mx-auto w-full px-6 py-8 flex gap-10">
@@ -64,7 +70,7 @@ export default async function StorePage(props: PageProps<"/">) {
         {total > 0 ? (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {products!.map((product) => (
+              {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

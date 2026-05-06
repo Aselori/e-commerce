@@ -63,10 +63,10 @@ export default async function OrderDetailPage({
             ← Mis pedidos
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mt-1">
-            Orden {order.order_number}
+            Pedido {order.order_number}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Creada el {new Date(order.created_at).toLocaleString("es-MX")}
+            Creado el {new Date(order.created_at).toLocaleString("es-MX")}
           </p>
         </div>
         <span

@@ -37,7 +37,7 @@ async function loadOrderWithEmail(orderId: string) {
     )
     .eq("id", orderId)
     .maybeSingle();
-  if (!order) throw new Error("Orden no encontrada.");
+  if (!order) throw new Error("Pedido no encontrado.");
 
   const { data: authData } = await supabase.auth.admin.getUserById(order.user_id);
   return { supabase, order, customerEmail: authData?.user?.email ?? null };
@@ -62,7 +62,7 @@ export async function sendQuote(
 
   const { supabase, order, customerEmail } = await loadOrderWithEmail(orderId);
   if (order.status !== "pending_review") {
-    return { error: "Esta orden no está en revisión." };
+    return { error: "Este pedido no está en revisión." };
   }
   if (order.delivery_method !== "shipping") {
     return { error: "Solo aplica a pedidos con envío." };

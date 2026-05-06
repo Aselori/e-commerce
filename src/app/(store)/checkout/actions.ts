@@ -1,7 +1,6 @@
 "use server";
 
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { notifyAdminNewOrder, notifyCustomerOrderReceived } from "@/lib/email";
 import type { BillingInfo } from "@/types";
@@ -148,7 +147,7 @@ export async function placeOrder(
     .select("id")
     .single();
 
-  if (oErr || !order) return { error: oErr?.message ?? "No se pudo crear la orden." };
+  if (oErr || !order) return { error: oErr?.message ?? "No se pudo crear el pedido." };
 
   const rows = items.map((it) => {
     const p = priceMap.get(it.productId)!;
@@ -180,5 +179,5 @@ export async function placeOrder(
   });
 
   revalidatePath("/orders");
-  redirect(`/orders/${orderNumber}`);
+  return { ok: true as const, orderNumber };
 }
